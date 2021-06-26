@@ -148,13 +148,20 @@ class SiteController extends Controller
         $model = new Trip();
         $model->user_id = Yii::$app->user->id;
         $post = Yii::$app->request->post();
-//        if ($post) {
-//            echo "<pre>".print_r($post, true)."</pre>";
-//            exit;
-//        }
         if ($model->load($post) and $model->validate() and $model->save()) {  // нажали сохранить
             $routs = [];
+            $break_number = 0;
             for($place_number = 1; $place_number < count($post["Rout"]); $place_number++) {
+                if (
+                    empty($post["Rout"][$place_number]["place"]) or
+                    empty($post["Rout"][$place_number]["price"]) or
+                    empty($post["Rout"][$place_number]["number_of_seats"])
+                ) {
+                    break;
+                }
+                $break_number = $place_number;
+            }
+            for($place_number = 1; $place_number <= $break_number; $place_number++) {
                 $routs[$place_number] = new Rout();
                 $routs[$place_number]->trip_id = $model->id;
                 $routs[$place_number]->from = $post["Rout"][$place_number - 1]["place"];
@@ -163,6 +170,7 @@ class SiteController extends Controller
                 $routs[$place_number]->price = $post["Rout"][$place_number]["price"];
                 $routs[$place_number]->number_of_seats = $post["Rout"][$place_number]["number_of_seats"];
                 if (!$routs[$place_number]->save()) {
+                    print_r($routs);
                     unset($routs[$place_number]);
                     foreach ($routs as $rout) {
                         $rout->delete();
